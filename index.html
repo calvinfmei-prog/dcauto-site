@@ -47,42 +47,11 @@
     <footer>DCAuto — Orgânico, transparente e 100% na Base</footer>
   </div>
 
-  <!-- Ethers.js -->
-  <script src="https://cdn.ethers.io/lib/ethers-6.7.0.umd.min.js" type="text/javascript"></script>
+  <!-- Ethers.js CDN ESTÁVEL -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.15.0/ethers.umd.min.js"></script>
 
-  <!-- WalletConnect Modal (CDN OFICIAL + FALLBACK) -->
-  <script>
-    (function () {
-      const cdnUrls = [
-        'https://cdn.jsdelivr.net/npm/@walletconnect/modal@2.6.2/dist/umd/index.min.js',
-        'https://unpkg.com/@walletconnect/modal@2.6.2/dist/umd/index.min.js',
-        'https://walletconnect.com/modal/index.min.js'
-      ];
-
-      let loaded = false;
-      let index = 0;
-
-      function tryLoad() {
-        if (loaded || index >= cdnUrls.length) return;
-
-        const script = document.createElement('script');
-        script.src = cdnUrls[index];
-        script.onload = () => {
-          loaded = true;
-          window.WalletConnectModalLoaded = true;
-          console.log('WalletConnect carregado:', cdnUrls[index]);
-        };
-        script.onerror = () => {
-          console.warn('Falha no CDN:', cdnUrls[index]);
-          index++;
-          tryLoad();
-        };
-        document.head.appendChild(script);
-      }
-
-      tryLoad();
-    })();
-  </script>
+  <!-- WalletConnect CDN ESTÁVEL -->
+  <script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.10.0/dist/index.umd.js"></script>
 
   <script>
     const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI";
@@ -100,28 +69,28 @@
 
     let provider, signer, contract, account;
 
-    connectBtn.addEventListener("click", async () => {
-      if (!window.WalletConnectModalLoaded) {
-        status.innerHTML = '<span class="error">Carregando conexão... (aguarde 3s)</span>';
-        await new Promise(r => setTimeout(r, 3000));
-        if (!window.WalletConnectModalLoaded) {
-          status.innerHTML = '<span class="error">Sem internet. Tente mais tarde.</span>';
-          return;
-        }
-      }
-
+    // === CONECTAR CARTEIRA (USANDO ETHEREUM-PROVIDER V2) ===
+    connectBtn.onclick = async () => {
       try {
         connectBtn.disabled = true;
-        status.textContent = "Abrindo carteira...";
+        status.textContent = "Conectando...";
 
-        const modal = new window.WalletConnectModal({
+        const { EthereumProvider } = window.EthereumProvider;
+
+        const provider = await EthereumProvider.init({
           projectId: PROJECT_ID,
-          chains: ['eip155:8453']
+          chains: [8453], // Base Mainnet
+          showQrModal: true,
+          metadata: {
+            name: "DCAuto",
+            description: "DCA Automático em BTC",
+            url: "https://dcauto-site.vercel.app",
+            icons: ["https://dcauto-site.vercel.app/icon.png"]
+          }
         });
 
-        const session = await modal.connect();
-        provider = new ethers.BrowserProvider(session);
-        signer = await provider.getSigner();
+        await provider.connect();
+        signer = new ethers.Wallet(provider);
         account = await signer.getAddress();
         contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
@@ -134,8 +103,9 @@
         status.innerHTML = `<span class="error">Erro: ${err.message || "Tente novamente"}</span>`;
         connectBtn.disabled = false;
       }
-    });
+    };
 
+    // === PREVIEW ===
     previewBtn.onclick = () => {
       const amount = parseFloat(amountInput.value);
       if (!amount || amount < 1 || amount > 1000) return alert("1 a 1000 USDT");
@@ -143,6 +113,7 @@
       preview.style.display = "block";
     };
 
+    // === CONFIRMAR DCA ===
     confirmBtn.onclick = async () => {
       try {
         confirmBtn.disabled = true;
