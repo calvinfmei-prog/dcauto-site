@@ -39,7 +39,7 @@
     let provider, signer, contract, account;
 
     document.getElementById("connect").onclick = async () => {
-      const modal = new WalletConnectModal.Modal({
+      const modal = new window.WalletConnectModal({
         projectId: '8ba936a6855cfb7cb2a83cacb4b04174',
         chains: ['eip155:8453']
       });
@@ -72,4 +72,5 @@
   </script>
 </body>
 </html>
+
 
