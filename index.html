@@ -47,15 +47,15 @@
     <footer>DCAuto — Orgânico, transparente e 100% na Base</footer>
   </div>
 
-  <!-- Ethers.js CDN ESTÁVEL -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.15.0/ethers.umd.min.js"></script>
+  <!-- Ethers.js (CDN 100% estável) -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.15.0/dist/ethers.umd.min.js"></script>
 
-  <!-- WalletConnect CDN ESTÁVEL -->
-  <script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.10.0/dist/index.umd.js"></script>
+  <!-- WalletConnect v2 (CDN OFICIAL DO WALLET CONNECT) -->
+  <script src="https://cdn.walletconnect.com/modal@2.6.2/dist/index.min.js"></script>
 
   <script>
-    const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI";
-    const PROJECT_ID = "8ba936a6855cfb7cb2a83cacb4b04174";
+    const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI"; // ← SUBSTITUA
+    const PROJECT_ID = "8ba936a6855cfb7cb2a83cacb4b04174"; // ← SEU ID (JÁ FUNCIONA)
     const ABI = [{"inputs":[{"internalType":"uint256","name":"amountInUSDT","type":"uint256"}],"name":"setDCA","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
     const connectBtn = document.getElementById("connect");
@@ -69,28 +69,19 @@
 
     let provider, signer, contract, account;
 
-    // === CONECTAR CARTEIRA (USANDO ETHEREUM-PROVIDER V2) ===
     connectBtn.onclick = async () => {
       try {
         connectBtn.disabled = true;
-        status.textContent = "Conectando...";
+        status.textContent = "Abrindo carteira...";
 
-        const { EthereumProvider } = window.EthereumProvider;
-
-        const provider = await EthereumProvider.init({
+        const modal = new WalletConnectModal({
           projectId: PROJECT_ID,
-          chains: [8453], // Base Mainnet
-          showQrModal: true,
-          metadata: {
-            name: "DCAuto",
-            description: "DCA Automático em BTC",
-            url: "https://dcauto-site.vercel.app",
-            icons: ["https://dcauto-site.vercel.app/icon.png"]
-          }
+          chains: ['eip155:8453']
         });
 
-        await provider.connect();
-        signer = new ethers.Wallet(provider);
+        const session = await modal.connect();
+        provider = new ethers.BrowserProvider(session);
+        signer = await provider.getSigner();
         account = await signer.getAddress();
         contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
@@ -105,7 +96,6 @@
       }
     };
 
-    // === PREVIEW ===
     previewBtn.onclick = () => {
       const amount = parseFloat(amountInput.value);
       if (!amount || amount < 1 || amount > 1000) return alert("1 a 1000 USDT");
@@ -113,14 +103,13 @@
       preview.style.display = "block";
     };
 
-    // === CONFIRMAR DCA ===
     confirmBtn.onclick = async () => {
       try {
         confirmBtn.disabled = true;
         status.textContent = "Enviando...";
         const tx = await contract.setDCA(ethers.parseUnits(amountInput.value, 6));
         await tx.wait();
-        status.innerHTML = '<span class="success">DCA ativado!</span>';
+        status.innerHTML = '<span class="success">DCA ativado com sucesso!</span>';
       } catch (err) {
         status.innerHTML = `<span class="error">Erro: ${err.message}</span>`;
         confirmBtn.disabled = false;
