@@ -4,10 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>DCAuto — DCA Automático em BTC</title>
-  <meta name="description" content="Compre $10 de BTC todo dia — automático, sem KYC, 0.5% taxa na Base." />
-  
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  
   <style>
     :root { --primary: #0066ff; --bg: #f8f9fa; --card: #ffffff; --text: #1a1a1a; --success: #10b981; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -52,12 +49,11 @@
 
   <!-- Libraries -->
   <script src="https://unpkg.com/ethers@6.7.0/dist/ethers.umd.min.js"></script>
-  <script src="https://unpkg.com/@walletconnect/modal@2.6.2/dist/umd/index.min.js" defer></script>
+  <script src="https://unpkg.com/@walletconnect/modal@2.6.2/dist/umd/index.min.js"></script>
 
   <script>
     const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI";
     const PROJECT_ID = "8ba936a6855cfb7cb2a83cacb4b04174";
-    
     const ABI = [{"inputs":[{"internalType":"uint256","name":"amountInUSDT","type":"uint256"}],"name":"setDCA","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
     const connectBtn = document.getElementById("connect");
@@ -71,17 +67,41 @@
 
     let provider, signer, contract, account;
 
-    // === BOTÃO ATIVO IMEDIATAMENTE ===
-    connectBtn.onclick = async () => {
-      if (typeof WalletConnectModal === 'undefined') {
-        status.innerHTML = '<span class="error">Carregando conexão... (aguarde 2s)</span>';
+    // === CARREGA O WALLET CONNECT COM GARANTIA ===
+    const loadWalletConnect = () => {
+      return new Promise((resolve) => {
+        if (window.WalletConnectModal) {
+          resolve(window.WalletConnectModal);
+          return;
+        }
+
+        const check = setInterval(() => {
+          if (window.WalletConnectModal) {
+            clearInterval(check);
+            resolve(window.WalletConnectModal);
+          }
+        }, 100);
+
+        setTimeout(() => {
+          clearInterval(check);
+          resolve(null);
+        }, 5000);
+      });
+    };
+
+    // === BOTÃO CONECTAR ===
+    connectBtn.addEventListener("click", async () => {
+      connectBtn.disabled = true;
+      status.innerHTML = '<span class="error">Carregando conexão...</span>';
+
+      const WalletConnectModal = await loadWalletConnect();
+      if (!WalletConnectModal) {
+        status.innerHTML = '<span class="error">Falha ao carregar. Recarregue a página.</span>';
+        connectBtn.disabled = false;
         return;
       }
 
       try {
-        connectBtn.disabled = true;
-        status.textContent = "Abrindo carteira...";
-
         const modal = new WalletConnectModal({
           projectId: PROJECT_ID,
           chains: ['eip155:8453']
@@ -99,10 +119,10 @@
 
       } catch (err) {
         console.error(err);
-        status.innerHTML = `<span class="error">Erro: ${err.message || "Tente novamente"}</span>`;
+        status.innerHTML = `<span class="error">Erro: ${err.message}</span>`;
         connectBtn.disabled = false;
       }
-    };
+    });
 
     // === PREVIEW ===
     previewBtn.onclick = () => {
@@ -112,7 +132,7 @@
       preview.style.display = "block";
     };
 
-    // === CONFIRMAR ===
+    // === CONFIRMAR DCA ===
     confirmBtn.onclick = async () => {
       try {
         confirmBtn.disabled = true;
