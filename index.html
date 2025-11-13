@@ -49,7 +49,24 @@
 
   <!-- Libraries -->
   <script src="https://unpkg.com/ethers@6.7.0/dist/ethers.umd.min.js"></script>
-  <script src="https://unpkg.com/@walletconnect/modal@2.6.2/dist/umd/index.min.js"></script>
+
+  <!-- CARREGA WALLET CONNECT COM GARANTIA -->
+  <script>
+    // === CARREGA O MODAL OFICIAL DO WALLET CONNECT ===
+    (function () {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/@walletconnect/modal@2.6.2/dist/umd/index.min.js';
+      script.onload = () => {
+        console.log('WalletConnect Modal carregado com sucesso!');
+        window.WalletConnectModalLoaded = true;
+      };
+      script.onerror = () => {
+        console.error('Erro ao carregar WalletConnect');
+        document.getElementById('status').innerHTML = '<span class="error">Erro de rede. Verifique sua conexão.</span>';
+      };
+      document.head.appendChild(script);
+    })();
+  </script>
 
   <script>
     const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI";
@@ -67,42 +84,26 @@
 
     let provider, signer, contract, account;
 
-    // === CARREGA O WALLET CONNECT COM GARANTIA ===
-    const loadWalletConnect = () => {
-      return new Promise((resolve) => {
-        if (window.WalletConnectModal) {
-          resolve(window.WalletConnectModal);
-          return;
-        }
-
-        const check = setInterval(() => {
-          if (window.WalletConnectModal) {
-            clearInterval(check);
-            resolve(window.WalletConnectModal);
-          }
-        }, 100);
-
-        setTimeout(() => {
-          clearInterval(check);
-          resolve(null);
-        }, 5000);
-      });
-    };
-
-    // === BOTÃO CONECTAR ===
+    // === BOTÃO CONECTAR COM ESPERA GARANTIDA ===
     connectBtn.addEventListener("click", async () => {
-      connectBtn.disabled = true;
-      status.innerHTML = '<span class="error">Carregando conexão...</span>';
-
-      const WalletConnectModal = await loadWalletConnect();
-      if (!WalletConnectModal) {
-        status.innerHTML = '<span class="error">Falha ao carregar. Recarregue a página.</span>';
-        connectBtn.disabled = false;
-        return;
+      if (!window.WalletConnectModalLoaded) {
+        status.innerHTML = '<span class="error">Carregando conexão... (aguarde 2s)</span>';
+        // Espera até o script carregar
+        await new Promise(resolve => {
+          const check = setInterval(() => {
+            if (window.WalletConnectModalLoaded) {
+              clearInterval(check);
+              resolve();
+            }
+          }, 100);
+        });
       }
 
       try {
-        const modal = new WalletConnectModal({
+        connectBtn.disabled = true;
+        status.textContent = "Abrindo carteira...";
+
+        const modal = new window.WalletConnectModal({
           projectId: PROJECT_ID,
           chains: ['eip155:8453']
         });
@@ -119,7 +120,7 @@
 
       } catch (err) {
         console.error(err);
-        status.innerHTML = `<span class="error">Erro: ${err.message}</span>`;
+        status.innerHTML = `<span class="error">Erro: ${err.message || "Tente novamente"}</span>`;
         connectBtn.disabled = false;
       }
     });
