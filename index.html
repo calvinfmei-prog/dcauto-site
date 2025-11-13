@@ -87,7 +87,7 @@
           }
         });
 
-        await wcProvider.connect();
+        await wcProvider.enable(); // MÉTODO CORRETO: enable() em vez de connect()
         provider = new ethers.BrowserProvider(wcProvider);
         signer = await provider.getSigner();
         account = await signer.getAddress();
