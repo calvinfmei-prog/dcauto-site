@@ -157,8 +157,8 @@
 
   <script>
     // === CONFIGURAÇÃO ===
-    const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI"; // SUBSTITUA PELO SEU CONTRATO
-    const PROJECT_ID = "8ba936a6855cfb7cb2a83cacb4b04174"; // SEU PROJECT ID
+    const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI";
+    const PROJECT_ID = "8ba936a6855cfb7cb2a83cacb4b04174";
     
     const ABI = [
       {
@@ -182,34 +182,47 @@
 
     let provider, signer, contract, account;
 
-    // === CONECTAR CARTEIRA (CORRIGIDO PARA V2 UMD) ===
-    connectBtn.onclick = async () => {
-      try {
-        connectBtn.disabled = true;
-        status.textContent = "Conectando...";
-
-        // CORREÇÃO: Inicialização direta do UMD (sem destructure)
-        const modal = new WalletConnectModal({
-          projectId: PROJECT_ID,
-          chains: ['eip155:8453']
-        });
-
-        const session = await modal.connect();
-        provider = new ethers.BrowserProvider(session);
-        signer = await provider.getSigner();
-        account = await signer.getAddress();
-        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-
-        connectBtn.style.display = "none";
-        form.style.display = "block";
-        status.innerHTML = `Conectado: <span class="success">${account.slice(0,6)}...${account.slice(-4)}</span>`;
-
-      } catch (err) {
-        console.error(err);
-        status.innerHTML = `<span class="error">Erro: ${err.message || "Tente novamente"}</span>`;
-        connectBtn.disabled = false;
+    // === AGUARDA O SCRIPT CARREGAR ===
+    function waitForWalletConnect() {
+      if (typeof WalletConnectModal !== 'undefined') {
+        initWalletConnect();
+      } else {
+        setTimeout(waitForWalletConnect, 100);
       }
-    };
+    }
+
+    // === INICIALIZAÇÃO CORRETA ===
+    function initWalletConnect() {
+      connectBtn.onclick = async () => {
+        try {
+          connectBtn.disabled = true;
+          status.textContent = "Conectando...";
+
+          const modal = new WalletConnectModal({
+            projectId: PROJECT_ID,
+            chains: ['eip155:8453']
+          });
+
+          const session = await modal.connect();
+          provider = new ethers.BrowserProvider(session);
+          signer = await provider.getSigner();
+          account = await signer.getAddress();
+          contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+          connectBtn.style.display = "none";
+          form.style.display = "block";
+          status.innerHTML = `Conectado: <span class="success">${account.slice(0,6)}...${account.slice(-4)}</span>`;
+
+        } catch (err) {
+          console.error(err);
+          status.innerHTML = `<span class="error">Erro: ${err.message || "Tente novamente"}</span>`;
+          connectBtn.disabled = false;
+        }
+      };
+    }
+
+    // === INICIA O AGUARDO ===
+    waitForWalletConnect();
 
     // === PREVIEW ===
     previewBtn.onclick = () => {
@@ -233,12 +246,12 @@
         confirmBtn.disabled = true;
         status.textContent = "Enviando transação...";
 
-        const amount = ethers.parseUnits(amountInput.value, 6); // USDT tem 6 decimais
+        const amount = ethers.parseUnits(amountInput.value, 6);
         const tx = await contract.setDCA(amount);
         status.textContent = "Aguardando confirmação...";
 
         await tx.wait();
-        status.innerHTML = `<span class="success">DCA ativado com sucesso! ✅</span>`;
+        status.innerHTML = `<span class="success">DCA ativado com sucesso!</span>`;
         
         setTimeout(() => {
           form.style.display = "none";
