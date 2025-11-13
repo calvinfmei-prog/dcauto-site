@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>DCAuto — DCA Automático</title>
+  <title>DCAuto — DCA Automático em BTC</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root { --primary: #0066ff; --bg: #f8f9fa; --card: #ffffff; --text: #1a1a1a; --success: #10b981; }
@@ -47,15 +47,15 @@
     <footer>DCAuto — Orgânico, transparente e 100% na Base</footer>
   </div>
 
-  <!-- Ethers.js -->
+  <!-- Ethers.js CDN ESTÁVEL -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.15.0/ethers.umd.min.js"></script>
 
-  <!-- WalletConnect v2 (MÉTODO OFICIAL - FUNCIONA 100%) -->
-  <script type="module">
-    import { WalletConnectModal } from 'https://unpkg.com/@walletconnect/modal@2.6.2';
+  <!-- WalletConnect EthereumProvider v2 UMD (OFICIAL, FUNCIONA SEM ERRO) -->
+  <script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.10.0/dist/index.umd.js"></script>
 
+  <script>
+    const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI"; // SUBSTITUA PELO SEU CONTRATO
     const PROJECT_ID = "8ba936a6855cfb7cb2a83cacb4b04174";
-    const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI";
     const ABI = [{"inputs":[{"internalType":"uint256","name":"amountInUSDT","type":"uint256"}],"name":"setDCA","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
     const connectBtn = document.getElementById("connect");
@@ -69,21 +69,26 @@
 
     let provider, signer, contract, account;
 
+    // === CONECTAR CARTEIRA (MÉTODO OFICIAL V2) ===
     connectBtn.onclick = async () => {
       try {
         connectBtn.disabled = true;
-        status.textContent = "Abrindo carteira...";
+        status.textContent = "Conectando...";
 
-        const modal = new WalletConnectModal({
+        const wcProvider = await window.EthereumProvider.init({
           projectId: PROJECT_ID,
-          chains: ['eip155:8453']
+          chains: [8453], // Base Mainnet
+          showQrModal: true,
+          metadata: {
+            name: "DCAuto",
+            description: "DCA Automático em BTC",
+            url: "https://dcauto-site.vercel.app",
+            icons: ["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="] // Placeholder icon
+          }
         });
 
-        // MÉTODO CORRETO: modal.open()
-        await modal.open();
-        const session = await modal.getSession();
-
-        provider = new ethers.BrowserProvider(window.ethereum || session);
+        await wcProvider.connect();
+        provider = new ethers.BrowserProvider(wcProvider);
         signer = await provider.getSigner();
         account = await signer.getAddress();
         contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
@@ -99,6 +104,7 @@
       }
     };
 
+    // === PREVIEW ===
     previewBtn.onclick = () => {
       const amount = parseFloat(amountInput.value);
       if (!amount || amount < 1 || amount > 1000) return alert("1 a 1000 USDT");
@@ -106,13 +112,14 @@
       preview.style.display = "block";
     };
 
+    // === CONFIRMAR DCA ===
     confirmBtn.onclick = async () => {
       try {
         confirmBtn.disabled = true;
         status.textContent = "Enviando...";
         const tx = await contract.setDCA(ethers.parseUnits(amountInput.value, 6));
         await tx.wait();
-        status.innerHTML = '<span class="success">DCA ativado!</span>';
+        status.innerHTML = '<span class="success">DCA ativado com sucesso!</span>';
       } catch (err) {
         status.innerHTML = `<span class="error">Erro: ${err.message}</span>`;
         confirmBtn.disabled = false;
