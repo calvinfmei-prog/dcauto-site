@@ -157,8 +157,8 @@
 
   <script>
     // === CONFIGURAÇÃO ===
-    const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI"; // SUBSTITUA PELO ENDEREÇO DO SEU CONTRATO
-    const PROJECT_ID = "8ba936a6855cfb7cb2a83cacb4b04174"; // SEU PROJECT ID (JÁ FUNCIONA)
+    const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI"; // SUBSTITUA PELO SEU CONTRATO
+    const PROJECT_ID = "8ba936a6855cfb7cb2a83cacb4b04174"; // SEU PROJECT ID
     
     const ABI = [
       {
@@ -182,13 +182,13 @@
 
     let provider, signer, contract, account;
 
-    // === CONECTAR CARTEIRA ===
+    // === CONECTAR CARTEIRA (CORRIGIDO PARA V2 UMD) ===
     connectBtn.onclick = async () => {
       try {
         connectBtn.disabled = true;
         status.textContent = "Conectando...";
 
-        const { WalletConnectModal } = window.WalletConnectModal;
+        // CORREÇÃO: Inicialização direta do UMD (sem destructure)
         const modal = new WalletConnectModal({
           projectId: PROJECT_ID,
           chains: ['eip155:8453']
