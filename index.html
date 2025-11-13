@@ -47,15 +47,15 @@
     <footer>DCAuto — Orgânico, transparente e 100% na Base</footer>
   </div>
 
-  <!-- Ethers.js (CDN 100% estável) -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.15.0/dist/ethers.umd.min.js"></script>
+  <!-- Ethers.js CDN ESTÁVEL -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.15.0/ethers.umd.min.js"></script>
 
-  <!-- WalletConnect v2 (CDN OFICIAL DO WALLET CONNECT) -->
-  <script src="https://cdn.walletconnect.com/modal@2.6.2/dist/index.min.js"></script>
-
-  <script>
-    const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI"; // ← SUBSTITUA
-    const PROJECT_ID = "8ba936a6855cfb7cb2a83cacb4b04174"; // ← SEU ID (JÁ FUNCIONA)
+  <!-- WalletConnect Modal v2 (IMPORT MODULE OFICIAL - SEM ERRO) -->
+  <script type="module">
+    import { WalletConnectModal } from 'https://unpkg.com/@walletconnect/modal@2.6.2';
+    
+    const CONTRACT_ADDRESS = "0xSEU_CONTRATO_AQUI";
+    const PROJECT_ID = "8ba936a6855cfb7cb2a83cacb4b04174";
     const ABI = [{"inputs":[{"internalType":"uint256","name":"amountInUSDT","type":"uint256"}],"name":"setDCA","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
     const connectBtn = document.getElementById("connect");
@@ -72,7 +72,7 @@
     connectBtn.onclick = async () => {
       try {
         connectBtn.disabled = true;
-        status.textContent = "Abrindo carteira...";
+        status.textContent = "Conectando...";
 
         const modal = new WalletConnectModal({
           projectId: PROJECT_ID,
@@ -109,7 +109,7 @@
         status.textContent = "Enviando...";
         const tx = await contract.setDCA(ethers.parseUnits(amountInput.value, 6));
         await tx.wait();
-        status.innerHTML = '<span class="success">DCA ativado com sucesso!</span>';
+        status.innerHTML = '<span class="success">DCA ativado!</span>';
       } catch (err) {
         status.innerHTML = `<span class="error">Erro: ${err.message}</span>`;
         confirmBtn.disabled = false;
